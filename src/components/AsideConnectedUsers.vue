@@ -16,7 +16,7 @@ defineProps({
   users: {
     type: Array,
     required: true,
-    default: () => ({})
+    default: () => ([])
   }
 });
 </script>

@@ -10,7 +10,7 @@ import { ref } from 'vue';
 import AsideConnectedUsers from '@/components/AsideConnectedUsers.vue';
 import ChatComponent from '@/components/ChatComponent.vue';
 
-const connectedUsers = ref({});
+const connectedUsers = ref([]);  // Usar array en lugar de objeto
 
 const handleUsersUpdate = (users) => {
   connectedUsers.value = users;

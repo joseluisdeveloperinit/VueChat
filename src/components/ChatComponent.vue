@@ -24,18 +24,22 @@
           v-model="targetUser" 
           placeholder="ID del destinatario" 
         />
-      </div>
+      </div>     
       
-      
-      <div class="messages-panel">
-        <div v-for="(msg, index) in messages" :key="index" class="message">
-          <strong>{{ (msg.nickname || msg.from).slice(0, 5) }}</strong>: {{ msg.message }}
-          <span v-if="msg.type === 'private'" class="private-tag">(Privado)</span>
-        </div>
-      </div>
-    </div>
-
-    
+          <div class="messages-panel">
+            <div v-for="(msg, index) in messages" :key="index" class="message">
+              <strong>
+                {{
+                  // Primero verifica si msg.nickname existe
+                  msg.nickname 
+                    ? (msg.nickname === msg.from ? msg.nickname.slice(0, 5) : msg.nickname)
+                    : (msg.from ? msg.from.slice(0, 5) : 'Anónimo')
+                }}
+              </strong>: {{ msg.message }}
+              <span v-if="msg.type === 'private'" class="private-tag">(Privado)</span>
+            </div>
+          </div>
+      </div>    
   </div>  
 
   
@@ -62,16 +66,29 @@ const connectWebSocket = () => {
     const data = JSON.parse(event.data);
     if (data.type === 'id') {
       clientId.value = data.message;
+    } else if (data.type === 'users-updated') {
+      try {
+        // Ensure we're working with the parsed array
+        users.value = typeof data.message === 'string' 
+          ? JSON.parse(data.message) 
+          : data.message;
+        emit('users-updated', users.value);
+      } catch (e) {
+        console.error('Error parsing users:', e);
+      }
     } else {
       messages.value.push(data);
     }
   };
 
+  ws.value.onerror = (error) => {
+    console.error('WebSocket error:', error);
+  };
+
   ws.value.onclose = () => {
-    console.log('Conexión cerrada');
+    console.log('WebSocket connection closed');
   };
 };
-
 // Obtener usuarios conectados
 const fetchConnectedUsers = async () => {
   try {
@@ -105,13 +122,16 @@ const sendPrivateMessage = () => {
   }
 };
 
+
+
 const sendNickname = () => {
   if (ws.value && nickname.value.trim()) {
-    console.log(`el nickname ` + nickname.value);
     ws.value.send(JSON.stringify({
       type: 'nickname',
-      nickname: nickname.value  // <-- aquí
+      nickname: nickname.value
     }));
+    // Forzar actualización inmediata
+    setTimeout(fetchConnectedUsers, 300); // Pequeño retraso para dar tiempo al servidor
   }
 };
 
