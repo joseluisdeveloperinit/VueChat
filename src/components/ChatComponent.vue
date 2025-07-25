@@ -30,9 +30,7 @@
         <div v-for="(msg, index) in messages" :key="index" class="message">
           <strong>
             {{
-              msg.nickname 
-                ? (msg.nickname === msg.from ? msg.nickname.slice(0, 5) : msg.nickname)
-                : (msg.from ? msg.from.slice(0, 5) : 'Anónimo')
+              formatDisplayName(msg)
             }}
           </strong>: {{ msg.message }}
           <span v-if="msg.type === 'private'" class="private-tag">(Privado)</span>
@@ -54,6 +52,24 @@ const messages = ref([]);
 const users = ref([]);
 const clientId = ref('');
 const nickname = ref('');
+
+// Función para truncar nicknames
+const truncateNickname = (nickname) => {
+  if (!nickname) return null;
+  return nickname.length > 10 
+    ? `${nickname.substring(0, 10)}...` 
+    : nickname;
+};
+
+const formatDisplayName = (msg) => {
+  if (msg.nickname) {
+    const nameToDisplay = msg.nickname === msg.from ? msg.nickname.slice(0, 5) : msg.nickname;
+    return nameToDisplay.length > 10 
+      ? `${nameToDisplay.substring(0, 10)}...`
+      : nameToDisplay;
+  }
+  return msg.from ? msg.from.slice(0, 5) : 'Anónimo';
+};
 
 const props = defineProps({
   selectedUserId: {
