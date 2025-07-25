@@ -26,27 +26,24 @@
         />
       </div>     
       
-          <div class="messages-panel">
-            <div v-for="(msg, index) in messages" :key="index" class="message">
-              <strong>
-                {{
-                  // Primero verifica si msg.nickname existe
-                  msg.nickname 
-                    ? (msg.nickname === msg.from ? msg.nickname.slice(0, 5) : msg.nickname)
-                    : (msg.from ? msg.from.slice(0, 5) : 'Anónimo')
-                }}
-              </strong>: {{ msg.message }}
-              <span v-if="msg.type === 'private'" class="private-tag">(Privado)</span>
-            </div>
-          </div>
-      </div>    
+      <div class="messages-panel">
+        <div v-for="(msg, index) in messages" :key="index" class="message">
+          <strong>
+            {{
+              msg.nickname 
+                ? (msg.nickname === msg.from ? msg.nickname.slice(0, 5) : msg.nickname)
+                : (msg.from ? msg.from.slice(0, 5) : 'Anónimo')
+            }}
+          </strong>: {{ msg.message }}
+          <span v-if="msg.type === 'private'" class="private-tag">(Privado)</span>
+        </div>
+      </div>
+    </div>    
   </div>  
-
-  
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 
 const emit = defineEmits(['users-updated']);
 const ws = ref(null);
@@ -58,7 +55,21 @@ const users = ref([]);
 const clientId = ref('');
 const nickname = ref('');
 
-// Conexión WebSocket
+const props = defineProps({
+  selectedUserId: {
+    type: String,
+    default: ''
+  }
+});
+
+// Watcher para actualizar targetUser cuando cambia selectedUserId
+watch(() => props.selectedUserId, (newId) => {
+  if (newId) {
+    targetUser.value = newId;
+  }
+});
+
+// Resto del código (connectWebSocket, fetchConnectedUsers, sendPublicMessage, etc.) permanece igual
 const connectWebSocket = () => {
   ws.value = new WebSocket('ws://localhost:8080/chat');
 
@@ -68,7 +79,6 @@ const connectWebSocket = () => {
       clientId.value = data.message;
     } else if (data.type === 'users-updated') {
       try {
-        // Ensure we're working with the parsed array
         users.value = typeof data.message === 'string' 
           ? JSON.parse(data.message) 
           : data.message;
@@ -89,18 +99,17 @@ const connectWebSocket = () => {
     console.log('WebSocket connection closed');
   };
 };
-// Obtener usuarios conectados
+
 const fetchConnectedUsers = async () => {
   try {
     const response = await fetch('http://localhost:8080/api/chat/users');
     users.value = await response.json();    
-    emit('users-updated', users.value); // <-- Añade esta línea
+    emit('users-updated', users.value);
   } catch (error) {
     console.error('Error fetching users:', error);
   }
 };
 
-// Enviar mensajes
 const sendPublicMessage = () => {
   if (ws.value && message.value.trim()) {
     ws.value.send(JSON.stringify({
@@ -122,21 +131,18 @@ const sendPrivateMessage = () => {
   }
 };
 
-
-
 const sendNickname = () => {
   if (ws.value && nickname.value.trim()) {
     ws.value.send(JSON.stringify({
       type: 'nickname',
       nickname: nickname.value
     }));
-    // Forzar actualización inmediata
-    setTimeout(fetchConnectedUsers, 300); // Pequeño retraso para dar tiempo al servidor
+    nickname.value = '';
+    setTimeout(fetchConnectedUsers, 300);
+
   }
 };
 
-
-// Inicialización
 onMounted(() => {
   connectWebSocket();
   fetchConnectedUsers();
@@ -145,6 +151,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* Mantener el CSS existente sin cambios */
 .chat-container {
   display: flex;
   height: 100vh;
@@ -173,16 +180,16 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  justify-content: flex-start; /* Añade esto */
-  height: 100%; /* Asegura altura completa */
-  max-height: calc(100vh - 200px); /* Ajusta según tu layout */
+  justify-content: flex-start;
+  height: 100%;
+  max-height: calc(100vh - 200px);
 }
 
 .message {
   border-radius: 18px;
   word-wrap: break-word;
   text-align: left;
-  margin: 0; /* Elimina márgenes por defecto */
+  margin: 0;
 }
 
 .private-tag {
