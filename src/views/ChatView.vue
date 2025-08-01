@@ -1,5 +1,6 @@
 <template>
     <div>
+      <Advertise></Advertise>
         <AsideConnectedUsers 
           :users="connectedUsers"
           @user-selected="handleUserSelected"
@@ -8,6 +9,9 @@
           @users-updated="handleUsersUpdate"
           :selected-user-id="selectedUserId"
         ></ChatComponent>
+        <Advertise></Advertise>
+
+        
     </div>
 </template>
 
@@ -15,6 +19,7 @@
 import { ref } from 'vue';
 import AsideConnectedUsers from '@/components/AsideConnectedUsers.vue';
 import ChatComponent from '@/components/ChatComponent.vue';
+import Advertise from '@/components/Advertise.vue';
 
 const connectedUsers = ref([]);
 const selectedUserId = ref('');

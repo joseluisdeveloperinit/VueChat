@@ -45,19 +45,19 @@ const selectUser = (userId) => {
 </script>
 
 <style scoped>
-/* Tus estilos se mantienen igual */
 .aside {
   padding: 0.5rem;
-  border: 1px solid #ddd;
+  border: 1px solid #ff5722;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   justify-content: flex-start;
-  height: 100%;
+  margin: 0.5rem;
+
 }
 
 h2 {
-  color: #2196f3;
+  color: #e91e63;
   margin-bottom: 1rem;
   font-size: 1.2rem;
 }
