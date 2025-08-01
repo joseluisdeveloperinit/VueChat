@@ -47,12 +47,14 @@ const selectUser = (userId) => {
 <style scoped>
 .aside {
   padding: 0.5rem;
-  border: 1px solid #ff5722;
+  border: 4mm ridge rgb(226, 94, 41);  padding: 0.5rem;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   justify-content: flex-start;
   margin: 0.5rem;
+  border-radius: 14px;
+
 
 }
 
@@ -73,6 +75,9 @@ li {
   border-radius: 4px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   cursor: pointer;
+  background-color: #222;
+  color: #f7420b;
+
 }
 
 li:hover {

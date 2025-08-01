@@ -1,41 +1,48 @@
 <template>
   <div class="chat-container">    
     <div class="chat-main">
-      <h1>Chat Anónimo</h1>
-      <div class="message-inputs">
-        <label>Change nickname</label>
-        <input
-          v-model="nickname"
-          @keyup.enter="sendNickname"
-          placeholder="Escribe tu nickname"
-        />
-        <button @click="sendNickname">Save</button>
-        <input 
-          v-model="message" 
-          @keyup.enter="sendPublicMessage" 
-          placeholder="Public Message" 
-        />
-        <input 
-          v-model="privateMessage" 
-          @keyup.enter="sendPrivateMessage" 
-          placeholder="Private Message" 
-        />
-        <input 
-          v-model="targetUser" 
-          placeholder="User Id" 
-        />
+      <div class="border">
+        <h1>Chat Anónimo</h1>
       </div>     
+      <hr class="divider" />
+
       
+      <!-- Agrega esta capa con clase .messages-panel -->
       <div class="messages-panel">
         <div v-for="(msg, index) in messages" :key="index" class="message">
-          <strong>
-            {{
-              formatDisplayName(msg)
-            }}
+          <strong class="message-sender">
+            {{ formatDisplayName(msg) }}
           </strong>: {{ msg.message }}
           <span v-if="msg.type === 'private'" class="private-tag">(Privado)</span>
         </div>
       </div>
+      <hr class="divider" />
+
+
+        <div class="message-inputs">       
+          <input 
+            v-model="message" 
+            @keyup.enter="sendPublicMessage" 
+            placeholder="Public Message" 
+          />
+          <input 
+            v-model="privateMessage" 
+            @keyup.enter="sendPrivateMessage" 
+            placeholder="Private Message" 
+          />
+          <input 
+            v-model="targetUser" 
+            placeholder="User Id" 
+          />
+
+          <input
+            v-model="nickname"
+            @keyup.enter="sendNickname"
+            placeholder="Change your nickname"
+          />
+          <button @click="sendNickname">Save</button>
+        </div>
+
     </div>    
   </div>  
 </template>
@@ -172,29 +179,41 @@ onMounted(() => {
 <style scoped>
 /* Mantener el CSS existente sin cambios */
 .chat-container {
-  display: flex;
+  display:flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding: 0.5rem;
   height: 100vh;
+
+  
+
 }
 
 .chat-main {
   flex: 1;
-  padding: 1rem;
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  border: 4mm ridge rgb(226, 94, 41);  padding: 0.5rem;
+  padding: 0.5rem;
+  overflow: hidden; /* ❗️ IMPORTANTE: evita que crezca la página */
+  height: 100%;
+    border-radius: 14px;
+
 }
 
 .message-inputs {
   display: flex;
   gap: 0.5rem;
+  padding: 0.5rem;
+  
 }
 
 .messages-panel {
   flex: 1;
   overflow-y: auto;
-  border: 1px solid #ff5722;
   padding: 1rem;
-  border-radius: 4px;
+  border-radius: 14px;
   width: 100%;
   display: flex;
   flex-direction: column;
@@ -202,14 +221,37 @@ onMounted(() => {
   justify-content: flex-start;
   height: 100%;
   max-height: calc(100vh - 200px);
+
 }
 
 .message {
-  border-radius: 18px;
-  word-wrap: break-word;
   text-align: left;
-  margin: 0;
+  background-color: #222;
+  border-radius: 12px;
+  padding: 0.5rem 1rem;
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+  color: #ffffff;
+  line-height: 1.4;
+  max-width: 100%;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: flex-start;
+  align-items: flex-start;
 }
+
+.message-sender {
+  display: flex;
+  justify-content: flex-start;
+  align-items: flex-start;
+  white-space: nowrap;    /* no permitir salto de línea */
+  text-overflow: ellipsis;/* añade puntos suspensivos */
+  font-weight: bold;
+  color: #ff5722;
+}
+
 
 .private-tag {
   color: #ff5722;
@@ -219,7 +261,6 @@ onMounted(() => {
 
 h1 {
   color: #e91e63;
-  margin-bottom: 1rem;
 }
 
 input{
@@ -254,6 +295,17 @@ input {
   background-color: #181818;
   color: #7e837d;
   padding: 0.5rem 1rem;
+}
+
+.border{
+  display:  flex;
+  padding: 1rem;
+
+}
+.divider {
+  height: 1px;
+  color: #ff5722; /* o cualquier color que uses */
+  margin: 1rem 0;
 }
 
 
