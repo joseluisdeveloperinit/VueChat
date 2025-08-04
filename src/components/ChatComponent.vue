@@ -2,7 +2,7 @@
   <div class="chat-container">    
     <div class="chat-main">
       <div class="border">
-        <h1>Chat Anónimo</h1>
+        <!-- <h1>Chat Anónimo</h1> -->
       </div>     
       <hr class="divider" />
 
@@ -42,6 +42,10 @@
           />
           <button @click="sendNickname">Save</button>
         </div>
+        <div class="contact">
+            <a href="mailto:contacto@empresa.com">Contacta con nosotros</a>
+        </div>
+          
 
     </div>    
   </div>  
@@ -62,12 +66,12 @@ const nickname = ref('');
 
 const formatDisplayName = (msg) => {
   if (msg.nickname) {
-    const nameToDisplay = msg.nickname === msg.from ? msg.nickname.slice(0, 5) : msg.nickname;
+    const nameToDisplay = msg.nickname === msg.from ? msg.nickname.slice(0, 6) : msg.nickname;
     return nameToDisplay.length > 10 
       ? `${nameToDisplay.substring(0, 10)}...`
       : nameToDisplay;
   }
-  return msg.from ? msg.from.slice(0, 5) : 'Anónimo';
+  return msg.from ? msg.from.slice(0, 6) : 'Anónimo';
 };
 
 const props = defineProps({

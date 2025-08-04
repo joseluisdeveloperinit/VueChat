@@ -29,8 +29,8 @@ const props = defineProps({
 // Función para mostrar el nombre adecuado (truncado si es necesario)
 const displayName = (user) => {
   if (user.nickname) {
-    return user.nickname.length > 10 
-      ? `${user.nickname.substring(0, 10)}...`
+    return user.nickname.length > 15 
+      ? `${user.nickname.substring(0, 15)}...`
       : user.nickname;
   }
   return user.id.slice(0, 5);
@@ -50,7 +50,7 @@ const selectUser = (userId) => {
   border: 4mm ridge rgb(226, 94, 41);  padding: 0.5rem;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
   justify-content: flex-start;
   margin: 0.5rem;
   border-radius: 14px;
@@ -67,6 +67,7 @@ h2 {
 ul {
   list-style: none;
   padding: 0;
+  width: 100%;
 }
 
 li {
@@ -77,6 +78,7 @@ li {
   cursor: pointer;
   background-color: #222;
   color: #f7420b;
+    width: 100%;
 
 }
 
