@@ -1,7 +1,14 @@
 <template>
   <div class="chat-container">    
+
     <div class="chat-main">
-      <div class="border"></div>     
+      <div class="border"></div> 
+            <TabComponent
+    :tabs="formattedTabs"
+    :active-tab="activeTab"
+    @tab-selected="changeTab"
+    @tab-closed="closeTab"
+  />    
       <hr class="divider" />
 
       <!-- Panel de mensajes -->
@@ -69,6 +76,8 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue';
 import { BASE_URL } from '@/constans/Base_url';
+import TabComponent from './TabComponent.vue';
+import { computed } from 'vue';
 
 const emit = defineEmits(['users-updated']);
 const ws = ref(null);
@@ -82,6 +91,7 @@ const nickname = ref('');
 const imageInput = ref(null);
 const selectedImage = ref(null);
 const imageFile = ref(null);
+const activeTab = ref('public');
 
 const formatDisplayName = (msg) => {
   if (msg.nickname) {
@@ -93,6 +103,50 @@ const formatDisplayName = (msg) => {
   return msg.from ? msg.from.slice(0, 6) : 'Anónimo';
 };
 
+const formattedTabs = computed(() => {
+  return [
+    {
+      id: 'public',
+      title: 'Chat Público',
+      unread: conversations.value.public.unread || 0,
+      isOnline: true
+    },
+    ...Object.entries(conversations.value)
+      .filter(([id]) => id !== 'public')
+      .map(([id, conv]) => ({
+        id,
+        title: conv.nickname || id.slice(0, 6),
+        unread: conv.unread || 0,
+        isOnline: users.value.some(user => user.id === id)
+      }))
+  ];
+});
+
+// Estructura de conversaciones
+const conversations = ref({
+  public: {
+    messages: [],
+    unread: 0,
+    nickname: 'Chat Público'
+  }
+});
+
+
+const changeTab = (tabId) => {
+  activeTab.value = tabId;
+  // Resetear contador de no leídos
+  if (conversations.value[tabId]) {
+    conversations.value[tabId].unread = 0;
+  }
+};
+
+const closeTab = (tabId) => {
+  if (tabId === 'public') return;
+  delete conversations.value[tabId];
+  if (activeTab.value === tabId) {
+    activeTab.value = 'public';
+  }
+};
 const props = defineProps({
   selectedUserId: {
     type: String,
@@ -108,14 +162,19 @@ watch(() => props.selectedUserId, (newId) => {
 });
 
 // Resto del código (connectWebSocket, fetchConnectedUsers, sendPublicMessage, etc.) permanece igual
+
+
+
 const connectWebSocket = () => {
   ws.value = new WebSocket('ws://127.0.0.1:8080/chat');
 
   ws.value.onmessage = (event) => {
     const data = JSON.parse(event.data);
+    
     if (data.type === 'id') {
       clientId.value = data.message;
-    } else if (data.type === 'users-updated') {
+    } 
+    else if (data.type === 'users-updated') {
       try {
         users.value = typeof data.message === 'string' 
           ? JSON.parse(data.message) 
@@ -124,8 +183,28 @@ const connectWebSocket = () => {
       } catch (e) {
         console.error('Error parsing users:', e);
       }
-    } else {
-      messages.value.push(data);
+    }
+    else {
+      const conversationId = data.type === 'private' ? data.from : 'public';
+      
+      if (!conversations.value[conversationId]) {
+        conversations.value[conversationId] = {
+          messages: [],
+          unread: 0,
+          nickname: data.nickname || data.from.slice(0, 6)
+        };
+      }
+      
+      conversations.value[conversationId].messages.push({
+        ...data,
+        timestamp: new Date().toLocaleTimeString(),
+        isImage: data.type === 'image',
+        imageName: data.type === 'image' ? `image.${data.imageType}` : null
+      });
+      
+      if (activeTab.value !== conversationId) {
+        conversations.value[conversationId].unread++;
+      }
     }
   };
 
@@ -137,6 +216,9 @@ const connectWebSocket = () => {
     console.log('WebSocket connection closed');
   };
 };
+
+
+
 
 const fetchConnectedUsers = async () => {
   try {
