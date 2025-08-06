@@ -1,58 +1,74 @@
 <template>
   <div class="chat-container">    
     <div class="chat-main">
-      <div class="border">
-        <!-- <h1>Chat Anónimo</h1> -->
-      </div>     
+      <div class="border"></div>     
       <hr class="divider" />
 
-      
-      <!-- Agrega esta capa con clase .messages-panel -->
+      <!-- Panel de mensajes -->
       <div class="messages-panel">
         <div v-for="(msg, index) in messages" :key="index" class="message">
-          <strong class="message-sender">
-            {{ formatDisplayName(msg) }}
-          </strong>: {{ msg.message }}
+          <strong class="message-sender">{{ formatDisplayName(msg) }}</strong>: 
+          <span v-if="msg.isImage" class="image-message">
+            [Imagen: {{ msg.imageName }}]
+          </span>
+          <span v-else>{{ msg.message }}</span>
           <span v-if="msg.type === 'private'" class="private-tag">(Privado)</span>
         </div>
       </div>
       <hr class="divider" />
 
+      <!-- Inputs para mensajes -->
+      <div class="message-inputs">       
+        <input 
+          v-model="message" 
+          @keyup.enter="sendPublicMessage" 
+          placeholder="Public Message" 
+        />
+        <input 
+          v-model="privateMessage" 
+          @keyup.enter="sendPrivateMessage" 
+          placeholder="Private Message" 
+        />
+        <input 
+          v-model="targetUser" 
+          placeholder="User ID" 
+        />
 
-        <div class="message-inputs">       
-          <input 
-            v-model="message" 
-            @keyup.enter="sendPublicMessage" 
-            placeholder="Public Message" 
-          />
-          <input 
-            v-model="privateMessage" 
-            @keyup.enter="sendPrivateMessage" 
-            placeholder="Private Message" 
-          />
-          <input 
-            v-model="targetUser" 
-            placeholder="User Id" 
-          />
+        <!-- Input oculto para imágenes -->
+        <input
+          type="file"
+          id="imageInput"
+          ref="imageInput"
+          accept="image/*"
+          @change="handleImageSelect"
+          style="display: none;"
+        />
+        <button @click="triggerImageInput">📷 Send Image</button>
 
-          <input
-            v-model="nickname"
-            @keyup.enter="sendNickname"
-            placeholder="Change your nickname"
-          />
-          <button @click="sendNickname">Save</button>
-        </div>
-        <div class="contact">
-            <a href="mailto:contacto@empresa.com">Contacta con nosotros</a>
-        </div>
-          
+        <input
+          v-model="nickname"
+          @keyup.enter="sendNickname"
+          placeholder="Change nickname"
+        />
+        <button @click="sendNickname">Save</button>
+      </div>
 
+      <!-- Indicador de archivo seleccionado -->
+      <div v-if="imageFile" class="file-indicator">
+        <span class="file-name">{{ imageFile.name }}</span>
+        <button @click="sendImageMessage" class="small-btn">Send</button>
+        <button @click="cancelImage" class="small-btn cancel">×</button>
+      </div>
+      
+      <div class="contact">
+        <a href="mailto:contacto@empresa.com">Contacto</a>
+      </div>
     </div>    
   </div>  
 </template>
-
 <script setup>
 import { ref, onMounted, watch } from 'vue';
+import { BASE_URL } from '@/constans/Base_url';
 
 const emit = defineEmits(['users-updated']);
 const ws = ref(null);
@@ -63,6 +79,9 @@ const messages = ref([]);
 const users = ref([]);
 const clientId = ref('');
 const nickname = ref('');
+const imageInput = ref(null);
+const selectedImage = ref(null);
+const imageFile = ref(null);
 
 const formatDisplayName = (msg) => {
   if (msg.nickname) {
@@ -90,7 +109,7 @@ watch(() => props.selectedUserId, (newId) => {
 
 // Resto del código (connectWebSocket, fetchConnectedUsers, sendPublicMessage, etc.) permanece igual
 const connectWebSocket = () => {
-  ws.value = new WebSocket('ws://192.168.1.200:8080/chat');
+  ws.value = new WebSocket('ws://127.0.0.1:8080/chat');
 
   ws.value.onmessage = (event) => {
     const data = JSON.parse(event.data);
@@ -121,7 +140,7 @@ const connectWebSocket = () => {
 
 const fetchConnectedUsers = async () => {
   try {
-    const response = await fetch('http://192.168.1.200:8080/api/chat/users');
+    const response = await fetch( BASE_URL+'/chat/users');
     users.value = await response.json();    
     emit('users-updated', users.value);
   } catch (error) {
@@ -164,13 +183,92 @@ const sendNickname = () => {
 
 const fetchMessageHistory = async () => {
   try {
-    const response = await fetch('http://192.168.1.200:8080/api/chat/messages');
+    const response = await fetch(BASE_URL+'/chat/messages');
     const history = await response.json();
     messages.value = history; // Agrega los mensajes al estado
   } catch (error) {
     console.error('Error al cargar el historial:', error);
   }
 };
+
+const triggerImageInput = () => {
+  if (!targetUser.value) {
+    alert("Selecciona un usuario destino primero");
+    return;
+  }
+  imageInput.value.click();
+};
+
+const handleImageSelect = (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  // Validar tipo de archivo
+  if (!file.type.match('image.*')) {
+    alert("Solo se permiten archivos de imagen");
+    return;
+  }
+
+  // Validar tamaño (ej. 1MB máximo)
+  if (file.size > 1024 * 1024) {
+    alert("La imagen es demasiado grande (máximo 1MB)");
+    return;
+  }
+
+  // Crear preview
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    selectedImage.value = e.target.result;
+    imageFile.value = file;
+  };
+  reader.readAsDataURL(file);
+};
+
+const sendImageMessage = async () => {
+  if (!selectedImage.value || !targetUser.value || !ws.value) return;
+
+  try {
+    // Convertir imagen a base64
+    const base64Image = await toBase64(imageFile.value);
+    
+    ws.value.send(JSON.stringify({
+      type: "image",
+      to: targetUser.value,
+      imageData: base64Image.split(',')[1], // Quitar el prefijo
+      imageType: imageFile.value.type.split('/')[1] // png, jpeg, etc.
+    }));
+    
+    // Resetear después de enviar
+    cancelImage();
+    
+  } catch (error) {
+    console.error("Error al enviar imagen:", error);
+    alert("Error al enviar la imagen");
+  }
+};
+
+
+// Función auxiliar para convertir File a Base64
+const toBase64 = (file) => new Promise((resolve, reject) => {
+  const reader = new FileReader();
+  reader.readAsDataURL(file);
+  reader.onload = () => resolve(reader.result);
+  reader.onerror = error => reject(error);
+});
+
+
+
+
+
+
+const cancelImage = () => {
+  selectedImage.value = null;
+  imageFile.value = null;
+  if (imageInput.value) {
+    imageInput.value.value = '';
+  }
+};
+
 
 onMounted(() => {
   connectWebSocket();
@@ -312,6 +410,42 @@ input {
   margin: 1rem 0;
 }
 
+.file-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background-color: #333;
+  border-radius: 18px;
+  margin-top: 0.5rem;
+}
 
+.file-name {
+  flex-grow: 1;
+  font-size: 0.9rem;
+  color: #ccc;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.small-btn {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8rem;
+  border-radius: 12px;
+  background-color: #ff5722;
+  border: none;
+  cursor: pointer;
+}
+
+.small-btn.cancel {
+  background-color: #ff3333;
+  padding: 0.25rem 0.6rem;
+}
+
+.image-message {
+  color: #4fc3f7;
+  font-style: italic;
+}
 
 </style>

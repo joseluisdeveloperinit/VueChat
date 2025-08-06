@@ -1,6 +1,6 @@
 <template lang="">
     <div class="advertise">
-        eeeeeeeeeee
+       <a href=""><img src=""></img></a>
     </div>
 </template>
 <script>
@@ -10,7 +10,6 @@ export default {
 </script>
 <style>
 .advertise {
-  background-color: red;
   width: 100%;
   margin: 0.5rem;
   padding: 1rem;
